@@ -36,6 +36,8 @@ export default function Home() {
   const [showDebug, setShowDebug] = useState(false);
 
   const [introComplete, setIntroComplete] = useState(false);
+  const [gameReady, setGameReady] = useState(false);
+  const [countdown, setCountdown] = useState(10);
   const { toast } = useToast();
   const lastIdleCheck = useRef(Date.now());
   const idleTime = useRef(0);
@@ -46,6 +48,18 @@ export default function Home() {
   const isAuthorityUnlocked = true; // Always unlocked now
   const isCheating = Math.abs(offset) > 1000;
 
+  // --- Preparation Timer ---
+  useEffect(() => {
+    if (introComplete && !gameReady) {
+      if (countdown > 0) {
+        const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+        return () => clearTimeout(timer);
+      } else {
+        setGameReady(true);
+      }
+    }
+  }, [introComplete, gameReady, countdown]);
+
   // --- Game Loop (1s tick) ---
   useEffect(() => {
     const timer = setInterval(() => {
@@ -53,18 +67,18 @@ export default function Home() {
       setRealTime(now);
       
       // Play tick sound if seconds changed
-      if (now.second() !== lastTick.current && introComplete) {
+      if (now.second() !== lastTick.current && introComplete && gameReady) {
         lastTick.current = now.second();
         soundManager.playTick();
       }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [introComplete]);
+  }, [introComplete, gameReady]);
 
   // --- High Frequency Loop (Game Logic) ---
   useEffect(() => {
-    if (!introComplete) return;
+    if (!introComplete || !gameReady) return;
 
     let animationFrameId: number;
     
@@ -332,25 +346,62 @@ export default function Home() {
         act={gameState.act} 
       />
 
+      {introComplete && !gameReady && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center z-50">
+           <motion.div
+             initial={{ opacity: 0 }}
+             animate={{ opacity: 1 }}
+             className="text-white/30 font-mono text-sm tracking-widest mb-4"
+           >
+             INITIALIZING SIMULATOR
+           </motion.div>
+           <motion.div 
+             key={countdown}
+             initial={{ scale: 1.5, opacity: 0 }}
+             animate={{ scale: 1, opacity: 1 }}
+             exit={{ scale: 0.8, opacity: 0 }}
+             className="text-4xl font-mono text-white/50"
+           >
+             {countdown}
+           </motion.div>
+           <Button 
+             variant="link" 
+             className="text-white/20 mt-8 text-xs hover:text-white"
+             onClick={() => setGameReady(true)}
+           >
+             START NOW
+           </Button>
+        </div>
+      )}
+
       <div className="z-10 relative">
-        <Clock 
-          time={authorityTime} 
-          isGlitching={isCheating || gameState.glitchLevel > 0.3} 
-        />
+        <motion.div
+          animate={{ opacity: gameReady ? 1 : 0, filter: gameReady ? 'blur(0px)' : 'blur(20px)' }}
+          transition={{ duration: 1 }}
+        >
+          <Clock 
+            time={authorityTime} 
+            isGlitching={isCheating || gameState.glitchLevel > 0.3} 
+          />
+        </motion.div>
         
         {/* Real Time Ghost (visible only in Act 3 or high glitch) */}
-        {(gameState.act === 3 || gameState.glitchLevel > 0.5) && offset !== 0 && (
+        {(gameState.act === 3 || gameState.glitchLevel > 0.5) && offset !== 0 && gameReady && (
           <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none blur-sm mix-blend-difference scale-110">
              <Clock time={realTime} showSeconds={true} />
           </div>
         )}
       </div>
 
-      <AuthorityClock 
-        isLocked={!isAuthorityUnlocked}
-        onAdjust={handleAdjust}
-        onReset={handleReset}
-      />
+      <AnimatePresence>
+        {gameReady && (
+          <AuthorityClock 
+            isLocked={!isAuthorityUnlocked}
+            onAdjust={handleAdjust}
+            onReset={handleReset}
+          />
+        )}
+      </AnimatePresence>
       
       <Toaster />
     </div>
