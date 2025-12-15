@@ -1,0 +1,172 @@
+Backstory / Narrative
+
+Time is a river, steady yet fragile. You are an apprentice of the Timekeeper, tasked with understanding its flow.
+The Authority Clock is your simulator: a sandbox where seconds can be nudged, rewound, or accelerated.
+Manipulate it wisely… or leave it untouched. The Timekeeper watches. Patience, curiosity, and folly all leave traces in the simulator.
+Glitches are not errors—they are the echoes of your interference. Colors pulse and fracture only when time itself is disturbed.
+
+Visual & Audio Aesthetic
+
+Background: Black, infinite void.
+
+Text: White, crisp sans-serif.
+
+Clock Display: Centered, large digital clock.
+
+Authority Clock: Corner toggle icon 🕰️; arrow keys adjust hours/minutes.
+
+Accent Colors: Cyan, magenta, yellow appear only with glitches or secret puzzle triggers.
+
+Audio:
+
+Ticking in normal play
+
+Glitch hum when Authority Clock is used heavily
+
+Chimes for secret puzzles
+
+Animations:
+
+Smooth ticking
+
+Clock jitter for rewinds
+
+Overlay glitches intensify depending on cheat path
+
+Gameplay / Instructions
+
+Observe the clocks and solve puzzles when conditions are met.
+
+The Authority Clock is optional; manipulate for shortcuts, secret puzzles, or meta endings.
+
+Each puzzle can be solved honestly using real time alone.
+
+Optional secret puzzles reward experimentation.
+
+Endings vary based on your interaction with time.
+
+Level-by-Level Puzzle Outline
+ACT I — OBSERVE (Clean Path Friendly)
+
+Agreement
+
+Prompt: “When hours and minutes agree.”
+
+Rule: HH + MM = 42
+
+Solve: Wait for real time or nudge Authority Clock
+
+Glitch: None if untouched
+
+Reflection
+
+Prompt: “Time likes symmetry.”
+
+Rule: Seconds must be palindromes (00,11,22…55)
+
+Solve: Wait or adjust Authority Clock
+
+Glitch: Minor flash if clock used
+
+Imbalance
+
+Prompt: “Balance is suspicious.”
+
+Rule: Button active on odd minutes
+
+Solve: Wait or nudge Authority Clock
+
+Secret Clean Puzzle: Echo of the Hour
+Unlock: Solve all Act I puzzles without touching Authority Clock
+Solve: Wait for next full hour
+Reward: Chime + bonus text
+
+ACT II — CONTROL (Optional Authority Clock Introduced)
+
+Stillness
+
+Prompt: “Forward is not progress.”
+
+Rule: Puzzle activates if Authority Clock moves backward (optional)
+
+Solve: Rewind slightly or wait real time
+
+Glitch: Small jitter if Authority Clock used
+
+Precision
+
+Prompt: “No room for error.”
+
+Rule: Solve exactly at ??:00
+
+Solve: Wait for exact seconds or nudge Authority Clock
+
+Glitch: Low flicker if manipulated
+
+Outside Time
+
+Prompt: “This is not the right time.”
+
+Rule: Solve before 06:00 or after 23:00
+
+Solve: Wait or adjust Authority Clock
+
+Glitch: Subtle fade / pulse if Authority Clock used
+
+Partial Cheat Secret Puzzle: Mini Paradox
+Unlock: Manipulate Authority Clock at least once in Act II
+Solve: Simple dual-clock alignment
+Reward: Visual glitch flourish
+
+ACT III — RESISTANCE (Meta / Glitch / Paradox)
+
+Split
+
+Prompt: “Both are correct.”
+
+Rule: Align Authority Clock and Real Clock
+
+Solve: Nudge Authority Clock or wait for natural alignment
+
+Glitch: Clock hands drift, button flashes when near alignment
+
+Let Go (Final Puzzle)
+
+Prompt: “Stop fixing it.”
+
+Rule: Interaction resets puzzle; solved if untouched for 10s
+
+Solve: Do nothing
+
+Glitch: Increases with cheat usage
+
+Full Cheat Secret Puzzle: Fractured Moments
+Unlock: Heavy Authority Clock use / multiple puzzle manipulations
+Solve: Align multiple clock fragments in 5s
+Reward: Full-screen glitch + meta text
+
+Paths & Glitch Effects
+Path	Authority Clock Usage	Glitch Level	Secret Puzzle
+Clean	None	Minimal	Echo of the Hour
+Partial	Some	Moderate (jitter, pulse)	Mini Paradox
+Full Cheat	Frequent	Heavy (drifting clocks, screen overlays)	Fractured Moments
+
+Hint: Corner Timekeeper icon glows if Authority Clock is available
+
+Endings
+Path	Ending	Flavor Text
+Clean	Obedient Clock	“You respected time. The Timekeeper nods quietly.”
+Partial	Cheater Shortcut	“You bent time. The Timekeeper shrugs… experiments succeed, but something feels off.”
+Full Cheat	Paradox	“Time itself rebels. Simulator glitches. The Timekeeper panics.”
+Secret	Meta	“You were never in control. You were only allowed to try.”
+Player Experience / Tone
+
+Minimalist, introspective, slightly eerie
+
+Glitches and subtle colors make experimentation feel alive
+
+Rewards patience, observation, and careful planning
+
+Heavily manipulative play creates visual chaos and meta commentary
+
+Encourages replay to discover all endings and secrets
