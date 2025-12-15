@@ -51,46 +51,6 @@ export default function Home() {
   const isAuthorityUnlocked = true; // Always unlocked now
   const isCheating = Math.abs(offset) > 1000;
 
-  // --- Chaos / Challenge System ---
-  useEffect(() => {
-    if (!gameReady || gameEnded || gameState.act < 2) return;
-
-    // Resistance/Decay Loop
-    const decayInterval = setInterval(() => {
-      setOffset(currentOffset => {
-        if (currentOffset === 0) return 0;
-
-        // Act 2: Mild Decay (1% towards 0)
-        // Act 3: Strong Decay (3% towards 0) + Random Jumps
-        // Act 4: Extreme Decay (5% towards 0)
-        
-        let decayFactor = 0;
-        if (gameState.act === 2) decayFactor = 0.01;
-        if (gameState.act === 3) decayFactor = 0.03;
-        if (gameState.act === 4) decayFactor = 0.05;
-
-        // Random Chaos (Act 3+)
-        // Occasional random jumps in time
-        if (gameState.act >= 3 && Math.random() < 0.05) {
-           const jump = (Math.random() - 0.5) * 120000; // +/- 1-2 minutes
-           soundManager.playGlitch(0.1);
-           return currentOffset + jump;
-        }
-
-        // Apply Decay (Pull towards 0 / Real Time)
-        // This forces the player to actively maintain their manipulated time
-        const newOffset = currentOffset * (1 - decayFactor);
-        
-        // Snap to 0 if very close
-        if (Math.abs(newOffset) < 1000) return 0;
-        
-        return newOffset;
-      });
-    }, 1000); // Run every second
-
-    return () => clearInterval(decayInterval);
-  }, [gameReady, gameEnded, gameState.act]);
-
   // --- Preparation Timer ---
   useEffect(() => {
     if (introComplete && !gameReady) {
@@ -334,25 +294,6 @@ export default function Home() {
 
     soundManager.playGlitch(0.2);
 
-    // INPUT RESISTANCE (Act 3+)
-    // Chance for controls to malfunction or invert
-    let effectiveAmount = amount;
-    if (gameState.act >= 3) {
-       const chaosRoll = Math.random();
-       // 15% chance of glitch input
-       if (chaosRoll < 0.15) {
-          // Invert or random multiply
-          effectiveAmount = amount * (Math.random() > 0.5 ? -1 : 2);
-          
-          toast({
-            title: "INPUT ERROR",
-            description: "Control slipping...",
-            className: "bg-red-950 text-red-200 border-red-800 font-mono text-xs"
-          });
-          soundManager.playGlitch(0.5);
-       }
-    }
-
     // Rapid Click Detection for Destruction Ending
     if (gameState.act === 4 && unit === 'hour') {
        setRapidClicks(prev => prev + 1);
@@ -360,7 +301,7 @@ export default function Home() {
        clickTimer.current = setTimeout(() => setRapidClicks(0), 5000);
     }
 
-    const msAmount = unit === 'hour' ? effectiveAmount * 3600000 : effectiveAmount * 60000;
+    const msAmount = unit === 'hour' ? amount * 3600000 : amount * 60000;
     setOffset(prev => prev + msAmount);
     
     // Increase glitch level aggressively
@@ -516,17 +457,6 @@ export default function Home() {
           act={gameState.act} 
         />
       </div>
-
-      {/* Resistance Indicator (Act 2+) */}
-      {gameState.act >= 2 && offset !== 0 && !gameEnded && (
-        <motion.div 
-           initial={{ opacity: 0 }}
-           animate={{ opacity: 1 }}
-           className="absolute bottom-32 left-1/2 -translate-x-1/2 text-[10px] font-mono text-red-500/50 tracking-widest uppercase animate-pulse"
-        >
-           {gameState.act === 2 ? "TIMELINE RESISTANCE: LOW" : "TIMELINE RESISTANCE: CRITICAL"}
-        </motion.div>
-      )}
 
       <Objectives 
         isVisible={gameReady && !gameEnded}
