@@ -5,10 +5,12 @@ import { AuthorityClock } from '@/components/game/AuthorityClock';
 import { Narrative } from '@/components/game/Narrative';
 import { GlitchOverlay } from '@/components/game/GlitchOverlay';
 import { PUZZLES, GameState, Act, PuzzleId } from '@/lib/game';
+import { soundManager } from '@/lib/sound';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
-import { Watch } from 'lucide-react';
+import { Watch, Volume2, VolumeX, Bug } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 
 export default function Home() {
   // --- State ---
@@ -29,20 +31,31 @@ export default function Home() {
     subtext: "Time flows forward. Watch closely."
   });
 
+  const [isMuted, setIsMuted] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
+
   const { toast } = useToast();
   const lastIdleCheck = useRef(Date.now());
   const idleTime = useRef(0);
+  const lastTick = useRef(0);
 
   // --- Derived State ---
   const authorityTime = realTime.add(offset, 'ms');
-  const isAuthorityActive = gameState.act >= 2;
+  const isAuthorityUnlocked = gameState.act >= 2;
   const isCheating = Math.abs(offset) > 1000;
 
   // --- Game Loop (1s tick) ---
   useEffect(() => {
     const timer = setInterval(() => {
-      setRealTime(dayjs());
-    }, 1000); // Update every second
+      const now = dayjs();
+      setRealTime(now);
+      
+      // Play tick sound if seconds changed
+      if (now.second() !== lastTick.current) {
+        lastTick.current = now.second();
+        soundManager.playTick();
+      }
+    }, 1000);
 
     return () => clearInterval(timer);
   }, []);
@@ -66,15 +79,22 @@ export default function Home() {
     animationFrameId = requestAnimationFrame(loop);
 
     const resetIdle = () => { idleTime.current = 0; };
-    window.addEventListener('mousemove', resetIdle);
-    window.addEventListener('keydown', resetIdle);
+    const onUserInteraction = () => {
+      resetIdle();
+      soundManager.resume(); // Ensure AudioContext is resumed on user gesture
+    };
+
+    window.addEventListener('mousemove', onUserInteraction);
+    window.addEventListener('keydown', onUserInteraction);
+    window.addEventListener('click', onUserInteraction);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
-      window.removeEventListener('mousemove', resetIdle);
-      window.removeEventListener('keydown', resetIdle);
+      window.removeEventListener('mousemove', onUserInteraction);
+      window.removeEventListener('keydown', onUserInteraction);
+      window.removeEventListener('click', onUserInteraction);
     };
-  }, [realTime, offset, gameState]); // Dependencies for the loop context
+  }, [realTime, offset, gameState]); 
 
   // --- Logic ---
   const checkPuzzles = () => {
@@ -97,7 +117,6 @@ export default function Home() {
       } else if (puzzle.id === 'let_go') {
         isSolved = puzzle.check(h, m, s, { idleTime: idleTime.current });
       } else if (puzzle.id === 'echo_of_the_hour') {
-        // Only if we haven't cheated in Act 1 AND we solved at least 3 other Act 1 puzzles
         const act1SolvedCount = gameState.puzzlesSolved.filter(id => PUZZLES[id as keyof typeof PUZZLES].act === 1).length;
         if (!gameState.hasCheatedInAct1 && act1SolvedCount >= 3) {
           isSolved = puzzle.check(h, m, s);
@@ -107,7 +126,7 @@ export default function Home() {
             isSolved = puzzle.check(h, m, s, { offset });
          }
       } else if (puzzle.id === 'fractured_moments') {
-         if (gameState.cheatCount > 10) { // Check high usage
+         if (gameState.cheatCount > 10) { 
             isSolved = puzzle.check(h, m, s, { cheatCount: gameState.cheatCount });
          }
       } else {
@@ -121,9 +140,10 @@ export default function Home() {
   };
 
   const solvePuzzle = (id: PuzzleId) => {
-    // Prevent double solve
     if (gameState.puzzlesSolved.includes(id)) return;
 
+    soundManager.playSolve();
+    
     setGameState(prev => {
       const newSolved = [...prev.puzzlesSolved, id];
       const newAct = determineAct(newSolved);
@@ -133,12 +153,10 @@ export default function Home() {
         puzzlesSolved: newSolved,
         act: newAct,
         lastSolvedAt: Date.now(),
-        // Glitch increases with cheat count
         glitchLevel: Math.min(prev.cheatCount * 0.1, 1)
       };
     });
 
-    // Update narrative
     const puzzle = PUZZLES[id as keyof typeof PUZZLES];
     toast({
       title: "Puzzle Solved",
@@ -163,18 +181,30 @@ export default function Home() {
   };
 
   const determineAct = (solved: PuzzleId[]): Act => {
-    // Count main puzzles solved per act to progress
+    // Only upgrade Act if sufficient puzzles in current act are solved
     const act1Count = solved.filter(id => PUZZLES[id as keyof typeof PUZZLES].act === 1).length;
     const act2Count = solved.filter(id => PUZZLES[id as keyof typeof PUZZLES].act === 2).length;
-    const act3Count = solved.filter(id => PUZZLES[id as keyof typeof PUZZLES].act === 3).length;
 
-    if (act2Count >= 3) return 3;
+    // Need 3 from Act 1 to go to Act 2
+    // Need 2 from Act 2 to go to Act 3
+    
+    // Logic: 
+    // If we are in Act 1 and have >= 3 Act 1 puzzles -> Act 2
+    // If we are in Act 2 and have >= 2 Act 2 puzzles -> Act 3
+    
+    // However, user might skip order if using dev tools. 
+    // Safest:
+    if (act2Count >= 2 && act1Count >= 3) return 3;
     if (act1Count >= 3) return 2;
     return 1;
   };
 
   // --- Handlers ---
   const handleAdjust = (unit: 'hour' | 'minute', amount: number) => {
+    if (!isAuthorityUnlocked) return;
+
+    soundManager.playGlitch(0.2);
+
     const msAmount = unit === 'hour' ? amount * 3600000 : amount * 60000;
     setOffset(prev => prev + msAmount);
     
@@ -198,10 +228,18 @@ export default function Home() {
   const handleReset = () => {
     setOffset(0);
     setGameState(prev => ({ ...prev, glitchLevel: 0 })); 
+    soundManager.playGlitch(0.5);
+  };
+
+  const toggleMute = () => {
+    setIsMuted(!isMuted);
+    soundManager.toggleMute();
   };
 
   // --- Act Transitions ---
   useEffect(() => {
+    // Only update narrative if we just entered the act (simple check via puzzle count, or we could track prev act)
+    // For now, rely on render checks
     if (gameState.act === 2 && !gameState.puzzlesSolved.some(id => PUZZLES[id as keyof typeof PUZZLES].act === 2)) {
       setNarrative({ text: "Act II: Control", subtext: "The Authority Clock is now active." });
     } else if (gameState.act === 3 && !gameState.puzzlesSolved.some(id => PUZZLES[id as keyof typeof PUZZLES].act === 3)) {
@@ -210,20 +248,61 @@ export default function Home() {
   }, [gameState.act]);
 
 
+  // --- Dev Tools ---
+  const unlockAll = () => {
+    setGameState(prev => ({
+       ...prev, 
+       act: 3,
+       puzzlesSolved: ['agreement', 'reflection', 'imbalance', 'stillness', 'precision', 'outside_time'] as PuzzleId[]
+    }));
+    soundManager.playSolve();
+  };
+
   return (
     <div className="relative w-screen h-screen bg-black text-white overflow-hidden flex flex-col items-center justify-center">
       <GlitchOverlay intensity={gameState.glitchLevel} />
       
+      {/* UI Controls */}
+      <div className="absolute top-4 right-4 flex gap-2 z-50">
+        <Button variant="ghost" size="icon" onClick={toggleMute} className="text-white/50 hover:text-white">
+          {isMuted ? <VolumeX /> : <Volume2 />}
+        </Button>
+        <Button variant="ghost" size="icon" onClick={() => setShowDebug(!showDebug)} className="text-white/50 hover:text-white">
+          <Bug />
+        </Button>
+      </div>
+
+      {/* Dev Menu */}
+      <AnimatePresence>
+        {showDebug && (
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="absolute top-16 right-4 bg-zinc-900 border border-zinc-800 p-4 rounded-lg z-50 flex flex-col gap-2 w-48"
+          >
+            <span className="text-xs font-mono text-muted-foreground mb-1">DEV OVERRIDE</span>
+            <Button size="sm" variant="outline" onClick={unlockAll} className="w-full text-xs">Unlock All Acts</Button>
+            <Button size="sm" variant="outline" onClick={() => setGameState(p => ({ ...p, glitchLevel: p.glitchLevel + 0.2 }))} className="w-full text-xs">Increase Glitch</Button>
+            <div className="text-[10px] text-zinc-500 font-mono mt-2">
+              Act: {gameState.act}<br/>
+              Solved: {gameState.puzzlesSolved.length}<br/>
+              Offset: {offset}ms
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Timekeeper Icon */}
       <AnimatePresence>
-        {isAuthorityActive && (
+        {isAuthorityUnlocked && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.5 }}
             whileHover={{ opacity: 1, textShadow: "0 0 8px #fff" }}
-            className="absolute top-8 right-8 text-white/50 cursor-help z-50"
+            className="absolute top-8 right-16 text-white/50 cursor-help z-40"
           >
-             <Watch className="w-6 h-6 animate-pulse" />
+             <Watch className="w-6 h-6 animate-pulse text-clock-yellow" />
           </motion.div>
         )}
       </AnimatePresence>
@@ -249,7 +328,7 @@ export default function Home() {
       </div>
 
       <AuthorityClock 
-        isVisible={isAuthorityActive}
+        isLocked={!isAuthorityUnlocked}
         onAdjust={handleAdjust}
         onReset={handleReset}
       />
