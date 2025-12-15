@@ -9,9 +9,14 @@ export type PuzzleId =
   | 'let_go'
   | 'echo_of_the_hour' // Secret Act 1
   | 'mini_paradox'     // Secret Act 2
-  | 'fractured_moments'; // Secret Act 3
+  | 'fractured_moments' // Secret Act 3
+  // Endings
+  | 'acceptance'
+  | 'destruction'
+  | 'alignment'
+  | 'departure';
 
-export type Act = 1 | 2 | 3;
+export type Act = 1 | 2 | 3 | 4;
 
 export interface GameState {
   act: Act;
@@ -119,5 +124,34 @@ export const PUZZLES = {
     prompt: "Break it all.",
     hint: "Heavy manipulation",
     check: (h: number, m: number, s: number, meta?: { cheatCount: number }) => (meta?.cheatCount || 0) > 20
+  },
+  // --- ENDINGS ---
+  acceptance: {
+    id: 'acceptance',
+    act: 4,
+    prompt: "Accept the flow.",
+    hint: "Reset Authority to 0 (No offset)",
+    check: (h: number, m: number, s: number, meta?: { offset: number }) => (meta?.offset || 0) === 0
+  },
+  destruction: {
+    id: 'destruction',
+    act: 4,
+    prompt: "Break the cycle.",
+    hint: "Create a 12 hour offset",
+    check: (h: number, m: number, s: number, meta?: { offset: number }) => Math.abs(meta?.offset || 0) >= 43200000 // 12 hours
+  },
+  alignment: {
+    id: 'alignment',
+    act: 4,
+    prompt: "Perfect alignment.",
+    hint: "Match HH:MM:SS with real time exactly",
+    check: (h: number, m: number, s: number, meta?: { offset: number }) => Math.abs(meta?.offset || 0) < 500
+  },
+  departure: {
+    id: 'departure',
+    act: 4,
+    prompt: "Leave the stream.",
+    hint: "Close your eyes (Wait 20s)",
+    check: (h: number, m: number, s: number, meta?: { idleTime: number }) => (meta?.idleTime || 0) > 20000
   }
 } as const;

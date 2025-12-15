@@ -118,12 +118,65 @@ export default function Home() {
   // --- Logic ---
   const checkPuzzles = () => {
     // Only check the NEXT available puzzle in sequence
-    const nextPuzzleId = PUZZLE_SEQUENCE.find(pid => {
+    let nextPuzzleId = PUZZLE_SEQUENCE.find(pid => {
        const p = PUZZLES[pid as keyof typeof PUZZLES];
        return p.act === gameState.act && !gameState.puzzlesSolved.includes(pid);
     });
 
+    // --- ENDING LOGIC ---
+    // If no next puzzle in sequence AND we are in Act 3, determine the Ending Protocol
+    if (!nextPuzzleId && gameState.act === 3) {
+       // Check if we solved all Act 3 puzzles
+       const act3Solved = PUZZLE_SEQUENCE.filter(pid => PUZZLES[pid as keyof typeof PUZZLES].act === 3).every(pid => gameState.puzzlesSolved.includes(pid));
+       
+       if (act3Solved) {
+         // Determine which ending based on playstyle
+         if (gameState.cheatCount > 15) {
+            nextPuzzleId = 'destruction'; // High Chaos
+         } else if (gameState.cheatCount < 2) {
+            nextPuzzleId = 'acceptance'; // Purist
+         } else if (idleTime.current > 30000) { // If they've been idle a lot recently
+            nextPuzzleId = 'departure'; // Ghost
+         } else {
+            nextPuzzleId = 'alignment'; // Balanced
+         }
+       }
+    }
+    
+    // Also handle already unlocked Act 4 (Ending)
+    if (gameState.act === 4) {
+       // Find which ending puzzle is active but not solved
+       // Actually, we just need to re-derive it or store it. 
+       // Simpler: Just check all Act 4 puzzles. Only one fits the criteria logic, but let's just iterate all Act 4.
+       const endingPuzzles = ['acceptance', 'destruction', 'alignment', 'departure'] as PuzzleId[];
+       // We only want to check the one that matches our state, OR we can just check all and rely on the player to find it.
+       // Better: The Objective component needs to know WHICH one to show.
+       // So we should probably transition to Act 4 explicitly when Act 3 is done.
+    }
+
+    // New Flow:
+    // If Act 3 is done -> Transition to Act 4 -> Set specific active ending puzzle in state?
+    // OR: Just dynamically pick it here.
+    
+    if (gameState.act === 4) {
+       // In Act 4, we only check the specific ending puzzle assigned or all of them?
+       // Let's check ALL ending puzzles. The player might qualify for multiple but usually narrative locks one.
+       // Let's stick to the one implied by stats.
+       if (gameState.cheatCount > 15) nextPuzzleId = 'destruction';
+       else if (gameState.cheatCount < 2) nextPuzzleId = 'acceptance';
+       // Note: idleTime is transient, so 'departure' is hard to lock in. 
+       // Let's make Departure based on low interaction count overall? Or just if they trigger it now.
+       else nextPuzzleId = 'alignment'; 
+       
+       // Override for Departure if current idle is high
+       if (idleTime.current > 20000) nextPuzzleId = 'departure';
+    }
+
+
     if (!nextPuzzleId) return; // No more puzzles in this act or all solved
+
+    // Don't re-solve if already solved
+    if (gameState.puzzlesSolved.includes(nextPuzzleId as PuzzleId)) return;
 
     const puzzle = PUZZLES[nextPuzzleId as keyof typeof PUZZLES];
     if (!puzzle) return;
@@ -143,7 +196,6 @@ export default function Home() {
     } else if (puzzle.id === 'let_go') {
       isSolved = puzzle.check(h, m, s, { idleTime: idleTime.current });
     } else if (puzzle.id === 'echo_of_the_hour') {
-      // Just check condition, no cheat restriction
       isSolved = puzzle.check(h, m, s);
     } else if (puzzle.id === 'mini_paradox') {
         if (gameState.hasCheatedInAct2) {
@@ -153,6 +205,12 @@ export default function Home() {
         if (gameState.cheatCount > 10) { 
           isSolved = puzzle.check(h, m, s, { cheatCount: gameState.cheatCount });
         }
+    } else if (puzzle.act === 4) {
+        // ENDING PUZZLES
+        if (puzzle.id === 'acceptance') isSolved = puzzle.check(h, m, s, { offset });
+        if (puzzle.id === 'destruction') isSolved = puzzle.check(h, m, s, { offset });
+        if (puzzle.id === 'alignment') isSolved = puzzle.check(h, m, s, { offset });
+        if (puzzle.id === 'departure') isSolved = puzzle.check(h, m, s, { idleTime: idleTime.current });
     } else {
       isSolved = puzzle.check(h, m, s);
     }
@@ -201,22 +259,24 @@ export default function Home() {
     if (id === 'echo_of_the_hour') setNarrative({ text: "Pure Time.", subtext: "You respected the flow. The Timekeeper nods." });
     if (id === 'mini_paradox') setNarrative({ text: "A small fracture.", subtext: "You bent the rules." });
     if (id === 'fractured_moments') setNarrative({ text: "REALITY BREAK.", subtext: "You broke the simulator." });
+    
+    // Endings
+    if (id === 'acceptance') setNarrative({ text: "The Custodian.", subtext: "You kept the time pure. The cycle continues." });
+    if (id === 'destruction') setNarrative({ text: "The Breaker.", subtext: "Time is broken. You are free." });
+    if (id === 'alignment') setNarrative({ text: "The Architect.", subtext: "You built a new moment." });
+    if (id === 'departure') setNarrative({ text: "The Ghost.", subtext: "You were never here." });
   };
 
   const determineAct = (solved: PuzzleId[]): Act => {
     // Only upgrade Act if sufficient puzzles in current act are solved
     const act1Count = solved.filter(id => PUZZLES[id as keyof typeof PUZZLES].act === 1).length;
     const act2Count = solved.filter(id => PUZZLES[id as keyof typeof PUZZLES].act === 2).length;
+    const act3Count = solved.filter(id => PUZZLES[id as keyof typeof PUZZLES].act === 3).length;
 
-    // Need 3 from Act 1 to go to Act 2
-    // Need 2 from Act 2 to go to Act 3
-    
-    // Logic: 
-    // If we are in Act 1 and have >= 3 Act 1 puzzles -> Act 2
-    // If we are in Act 2 and have >= 2 Act 2 puzzles -> Act 3
-    
-    // However, user might skip order if using dev tools. 
-    // Safest:
+    // Check if Act 3 is fully done (based on Sequence)
+    const totalAct3 = PUZZLE_SEQUENCE.filter(pid => PUZZLES[pid as keyof typeof PUZZLES].act === 3).length;
+
+    if (act3Count >= totalAct3) return 4;
     if (act2Count >= 2 && act1Count >= 3) return 3;
     if (act1Count >= 3) return 2;
     return 1;
@@ -269,6 +329,8 @@ export default function Home() {
       setNarrative({ text: "Act II: Control", subtext: "You have already seized the power." });
     } else if (gameState.act === 3 && !gameState.puzzlesSolved.some(id => PUZZLES[id as keyof typeof PUZZLES].act === 3)) {
       setNarrative({ text: "Act III: Resistance", subtext: "The timelines are fracturing." });
+    } else if (gameState.act === 4 && !gameState.puzzlesSolved.some(id => PUZZLES[id as keyof typeof PUZZLES].act === 4)) {
+       setNarrative({ text: "Finale.", subtext: "Determine your fate." });
     }
   }, [gameState.act]);
 
@@ -354,6 +416,19 @@ export default function Home() {
       <Objectives 
         isVisible={gameReady}
         availablePuzzles={(() => {
+          // If Act 4, determine the dynamic ending puzzle
+          if (gameState.act === 4) {
+             let endingId: PuzzleId = 'alignment';
+             if (idleTime.current > 20000) endingId = 'departure';
+             else if (gameState.cheatCount > 15) endingId = 'destruction';
+             else if (gameState.cheatCount < 2) endingId = 'acceptance';
+             
+             // If already solved an ending, show nothing (or show completion message)
+             if (gameState.puzzlesSolved.some(id => PUZZLES[id as keyof typeof PUZZLES].act === 4)) return [];
+             
+             return [endingId];
+          }
+
           // Filter for current Act and not solved
           const actPuzzles = PUZZLE_SEQUENCE.filter(pid => {
             const p = PUZZLES[pid as keyof typeof PUZZLES];
