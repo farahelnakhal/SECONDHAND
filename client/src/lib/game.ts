@@ -139,16 +139,16 @@ export const PUZZLES = {
   acceptance: {
     id: 'acceptance',
     act: 4,
-    prompt: "Accept the flow.",
-    hint: "Reset Authority to 0 (No offset)",
-    check: (h: number, m: number, s: number, meta?: { offset: number }) => (meta?.offset || 0) === 0
+    prompt: "Return to the source.",
+    hint: "Set the time to exactly 00:00:00",
+    check: (h: number, m: number, s: number) => h === 0 && m === 0 && s === 0
   },
   destruction: {
     id: 'destruction',
     act: 4,
-    prompt: "Break the cycle.",
-    hint: "Create a 12 hour offset",
-    check: (h: number, m: number, s: number, meta?: { offset: number }) => Math.abs(meta?.offset || 0) >= 43200000 // 12 hours
+    prompt: "Shatter the clock.",
+    hint: "Rapidly change the hour 10 times in 5 seconds",
+    check: (h: number, m: number, s: number, meta?: { rapidClicks?: number }) => (meta?.rapidClicks || 0) >= 10
   },
   alignment: {
     id: 'alignment',
@@ -161,7 +161,7 @@ export const PUZZLES = {
     id: 'departure',
     act: 4,
     prompt: "Leave the stream.",
-    hint: "Close your eyes (Wait 20s)",
-    check: (h: number, m: number, s: number, meta?: { idleTime: number }) => (meta?.idleTime || 0) > 20000
+    hint: "Close your eyes (Wait 60s)",
+    check: (h: number, m: number, s: number, meta?: { idleTime: number }) => (meta?.idleTime || 0) > 60000
   }
 } as const;

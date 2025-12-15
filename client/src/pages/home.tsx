@@ -195,7 +195,7 @@ export default function Home() {
         // ENDING PUZZLES
         if (puzzle.id === 'judgment') isSolved = puzzle.check(h, m, s);
         if (puzzle.id === 'acceptance') isSolved = puzzle.check(h, m, s, { offset });
-        if (puzzle.id === 'destruction') isSolved = puzzle.check(h, m, s, { offset });
+        if (puzzle.id === 'destruction') isSolved = puzzle.check(h, m, s, { rapidClicks });
         if (puzzle.id === 'alignment') isSolved = puzzle.check(h, m, s, { offset });
         if (puzzle.id === 'departure') isSolved = puzzle.check(h, m, s, { idleTime: idleTime.current });
     } else {
@@ -270,22 +270,39 @@ export default function Home() {
     return 1;
   };
 
+  const [rapidClicks, setRapidClicks] = useState(0);
+  const clickTimer = useRef<NodeJS.Timeout | null>(null);
+
   // --- Handlers ---
   const handleAdjust = (unit: 'hour' | 'minute', amount: number) => {
     if (!isAuthorityUnlocked) return;
 
     soundManager.playGlitch(0.2);
 
+    // Rapid Click Detection for Destruction Ending
+    if (gameState.act === 4 && unit === 'hour') {
+       setRapidClicks(prev => prev + 1);
+       if (clickTimer.current) clearTimeout(clickTimer.current);
+       clickTimer.current = setTimeout(() => setRapidClicks(0), 5000);
+    }
+
     const msAmount = unit === 'hour' ? amount * 3600000 : amount * 60000;
     setOffset(prev => prev + msAmount);
     
-    setGameState(prev => ({
-      ...prev,
-      cheatCount: prev.cheatCount + 1,
-      glitchLevel: Math.min((prev.cheatCount + 1) * 0.05, 1),
-      hasCheatedInAct1: prev.act === 1 ? true : prev.hasCheatedInAct1,
-      hasCheatedInAct2: prev.act === 2 ? true : prev.hasCheatedInAct2
-    }));
+    // Only increase glitch level if NOT in ending phase (unless causing destruction)
+    if (gameState.act !== 4) {
+      setGameState(prev => ({
+        ...prev,
+        cheatCount: prev.cheatCount + 1,
+        // Glitch level accumulates and doesn't easily go down
+        glitchLevel: Math.min((prev.cheatCount + 1) * 0.05, 1),
+        hasCheatedInAct1: prev.act === 1 ? true : prev.hasCheatedInAct1,
+        hasCheatedInAct2: prev.act === 2 ? true : prev.hasCheatedInAct2
+      }));
+    } else {
+        // In Act 4, manipulation increases glitch temporarily?
+        // Or we keep glitch high if it was high.
+    }
 
     // Reset idle
     idleTime.current = 0;
@@ -298,7 +315,8 @@ export default function Home() {
 
   const handleReset = () => {
     setOffset(0);
-    setGameState(prev => ({ ...prev, glitchLevel: 0 })); 
+    // Don't reset glitch level completely, just reduce it slightly
+    setGameState(prev => ({ ...prev, glitchLevel: Math.max(prev.glitchLevel - 0.2, 0) })); 
     soundManager.playGlitch(0.5);
   };
 

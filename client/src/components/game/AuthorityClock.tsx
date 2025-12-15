@@ -17,7 +17,7 @@ export function AuthorityClock({ onAdjust, onReset, isLocked, className }: Autho
       initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "fixed bottom-8 right-8 p-6 rounded-xl border transition-all duration-500 z-50",
+        "fixed bottom-8 left-8 p-6 rounded-xl border transition-all duration-500 z-50",
         isLocked 
           ? "bg-black/40 border-white/5 grayscale opacity-50 pointer-events-none" 
           : "bg-black/80 backdrop-blur-md border-white/10 shadow-2xl",
