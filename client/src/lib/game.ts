@@ -28,49 +28,49 @@ export const PUZZLES = {
     id: 'agreement',
     act: 1,
     prompt: "When hours and minutes agree.",
-    hint: "HH + MM = 42",
+    hint: "HH + MM = 42 (e.g., 20:22)",
     check: (h: number, m: number, s: number) => h + m === 42
   },
   reflection: {
     id: 'reflection',
     act: 1,
     prompt: "Time likes symmetry.",
-    hint: "Seconds must be palindromes",
+    hint: "Seconds must repeat (00, 11, 22...)",
     check: (h: number, m: number, s: number) => s % 11 === 0 // 00, 11, 22...
   },
   imbalance: {
     id: 'imbalance',
     act: 1,
     prompt: "Balance is suspicious.",
-    hint: "Active on odd minutes",
+    hint: "Solve when minutes are ODD",
     check: (h: number, m: number, s: number) => m % 2 !== 0
   },
   echo_of_the_hour: {
     id: 'echo_of_the_hour',
     act: 1,
     prompt: "The pure hour approaches.",
-    hint: "Wait for HH:00:00 without cheating",
+    hint: "Wait for exactly HH:00:00 (No cheats)",
     check: (h: number, m: number, s: number) => m === 0 && s === 0
   },
   stillness: {
     id: 'stillness',
     act: 2,
     prompt: "Forward is not progress.",
-    hint: "Rewind slightly",
+    hint: "Move the clock BACKWARDS",
     check: (h: number, m: number, s: number, meta?: { movedBackward: boolean }) => !!meta?.movedBackward
   },
   precision: {
     id: 'precision',
     act: 2,
     prompt: "No room for error.",
-    hint: "Exactly at ??:00",
+    hint: "Solve exactly when seconds are 00",
     check: (h: number, m: number, s: number) => s === 0
   },
   outside_time: {
     id: 'outside_time',
     act: 2,
     prompt: "This is not the right time.",
-    hint: "Before 06:00 or after 23:00",
+    hint: "Set time to Night (23:00-06:00)",
     check: (h: number, m: number, s: number) => h < 6 || h >= 23
   },
   mini_paradox: {
