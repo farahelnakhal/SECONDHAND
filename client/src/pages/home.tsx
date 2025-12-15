@@ -118,7 +118,8 @@ export default function Home() {
   const checkPuzzles = () => {
     // Only check if we haven't solved it yet
     const currentPuzzles = Object.values(PUZZLES).filter(p => p.act === gameState.act && !gameState.puzzlesSolved.includes(p.id as PuzzleId));
-    
+    const activePuzzleIds = currentPuzzles.map(p => p.id as PuzzleId);
+
     const h = authorityTime.hour();
     const m = authorityTime.minute();
     const s = authorityTime.second();
@@ -343,7 +344,11 @@ export default function Home() {
       <Narrative 
         text={narrative.text} 
         subtext={narrative.subtext} 
-        act={gameState.act} 
+        act={gameState.act}
+        availablePuzzles={Object.values(PUZZLES)
+          .filter(p => p.act === gameState.act && !gameState.puzzlesSolved.includes(p.id as PuzzleId))
+          .map(p => p.id as PuzzleId)
+        } 
       />
 
       {introComplete && !gameReady && (
