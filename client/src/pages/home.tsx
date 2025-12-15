@@ -12,6 +12,7 @@ import { Watch, Volume2, VolumeX, Bug } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { IntroSequence } from '@/components/game/IntroSequence';
+import { Objectives } from '@/components/game/Objectives';
 
 export default function Home() {
   // --- State ---
@@ -344,11 +345,15 @@ export default function Home() {
       <Narrative 
         text={narrative.text} 
         subtext={narrative.subtext} 
-        act={gameState.act}
+        act={gameState.act} 
+      />
+
+      <Objectives 
+        isVisible={gameReady}
         availablePuzzles={Object.values(PUZZLES)
           .filter(p => p.act === gameState.act && !gameState.puzzlesSolved.includes(p.id as PuzzleId))
           .map(p => p.id as PuzzleId)
-        } 
+        }
       />
 
       {introComplete && !gameReady && (
