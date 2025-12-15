@@ -39,6 +39,7 @@ export default function Home() {
   const [introComplete, setIntroComplete] = useState(false);
   const [gameReady, setGameReady] = useState(false);
   const [showClock, setShowClock] = useState(true);
+  const [gameEnded, setGameEnded] = useState(false);
   const [countdown, setCountdown] = useState(10);
   const { toast } = useToast();
   const lastIdleCheck = useRef(Date.now());
@@ -254,6 +255,12 @@ export default function Home() {
        // Keep clock hidden for a moment, then show for final challenge
        setTimeout(() => setShowClock(true), 4000);
     }
+    
+    if (['acceptance', 'destruction', 'alignment', 'departure'].includes(id)) {
+       setGameEnded(true);
+       soundManager.playGlitch(0.8);
+    }
+
     if (id === 'acceptance') setNarrative({ text: "The Custodian.", subtext: "You kept the time pure. The cycle continues." });
     if (id === 'destruction') setNarrative({ text: "The Breaker.", subtext: "Time is broken. You are free." });
     if (id === 'alignment') setNarrative({ text: "The Architect.", subtext: "You built a new moment." });
@@ -331,6 +338,15 @@ export default function Home() {
 
   // --- Act Transitions ---
   useEffect(() => {
+    // Hide clock on ANY act transition to create "The Void" feeling
+    if (gameState.act > 1) {
+       setShowClock(false);
+       // Show it again after a delay, UNLESS it's Act 4 (Judgment) which handles it manually
+       if (gameState.act !== 4) {
+          setTimeout(() => setShowClock(true), 3000);
+       }
+    }
+
     // Only update narrative if we just entered the act (simple check via puzzle count, or we could track prev act)
     // For now, rely on render checks
     if (gameState.act === 1 && gameState.puzzlesSolved.length === 0) {
@@ -350,7 +366,7 @@ export default function Home() {
        } else {
           setNarrative({ text: "The Balance.", subtext: "You took control, but respected the order." });
        }
-       // Hide clock during Judgment (Start of Act 4)
+       // Hide clock during Judgment (Start of Act 4) - Already handled by top check but explicit here for clarity if logic changes
        setShowClock(false);
     }
   }, [gameState.act]);
@@ -428,14 +444,16 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <Narrative 
-        text={narrative.text} 
-        subtext={narrative.subtext} 
-        act={gameState.act} 
-      />
+      <div className={gameEnded ? "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl z-50 pointer-events-none" : ""}>
+        <Narrative 
+          text={narrative.text} 
+          subtext={narrative.subtext} 
+          act={gameState.act} 
+        />
+      </div>
 
       <Objectives 
-        isVisible={gameReady}
+        isVisible={gameReady && !gameEnded}
         availablePuzzles={(() => {
           // If Act 4, determine the dynamic ending puzzle
           if (gameState.act === 4) {
@@ -497,9 +515,9 @@ export default function Home() {
       <div className="z-10 relative">
         <motion.div
           animate={{ 
-            opacity: gameReady && showClock ? 1 : 0, 
-            filter: gameReady && showClock ? 'blur(0px)' : 'blur(20px)',
-            scale: showClock ? 1 : 0.9
+            opacity: gameReady && showClock && !gameEnded ? 1 : 0, 
+            filter: gameReady && showClock && !gameEnded ? 'blur(0px)' : 'blur(20px)',
+            scale: showClock && !gameEnded ? 1 : 0.9
           }}
           transition={{ duration: 2 }}
         >
@@ -510,7 +528,7 @@ export default function Home() {
         </motion.div>
         
         {/* Real Time Ghost (visible only in Act 3 or high glitch) */}
-        {(gameState.act === 3 || gameState.glitchLevel > 0.5) && offset !== 0 && gameReady && showClock && (
+        {(gameState.act === 3 || gameState.glitchLevel > 0.5) && offset !== 0 && gameReady && showClock && !gameEnded && (
           <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none blur-sm mix-blend-difference scale-110">
              <Clock time={realTime} showSeconds={true} />
           </div>
@@ -519,7 +537,7 @@ export default function Home() {
 
       <AnimatePresence>
         {/* Always visible Authority Clock once game is ready */}
-        {gameReady && (
+        {gameReady && !gameEnded && (
           <AuthorityClock 
             isLocked={false} 
             onAdjust={handleAdjust}
