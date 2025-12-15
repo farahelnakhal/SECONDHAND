@@ -108,6 +108,29 @@ class SoundManager {
     // Not implementing persistent loops to avoid annoyance, just event-based sounds.
   }
 
+  public playDeepChime() {
+    if (!this.ctx || this.isMuted) return;
+    this.resume();
+
+    // Low frequency ominous swell
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(this.masterGain!);
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(50, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 3);
+
+    gain.gain.setValueAtTime(0, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.4, this.ctx.currentTime + 1);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 4);
+
+    osc.start();
+    osc.stop(this.ctx.currentTime + 4);
+  }
+
   public toggleMute() {
     this.isMuted = !this.isMuted;
   }

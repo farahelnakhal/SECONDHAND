@@ -117,8 +117,8 @@ export const PUZZLES = {
     id: 'let_go',
     act: 3,
     prompt: "Stop fixing it.",
-    hint: "Do nothing for 8s",
-    check: (h: number, m: number, s: number, meta?: { idleTime: number }) => (meta?.idleTime || 0) > 8000
+    hint: "Do nothing for 10s",
+    check: (h: number, m: number, s: number, meta?: { idleTime: number }) => (meta?.idleTime || 0) > 10000
   },
   fractured_moments: {
     id: 'fractured_moments',

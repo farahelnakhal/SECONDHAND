@@ -91,6 +91,7 @@ export default function Home() {
       lastIdleCheck.current = now;
 
       // Idle detection (mouse movement resets this in event listener)
+      // Only reset if moved SIGNIFICANTLY to avoid micro-movements breaking the puzzle
       idleTime.current += delta;
 
       checkPuzzles();
@@ -100,7 +101,9 @@ export default function Home() {
     animationFrameId = requestAnimationFrame(loop);
 
     const resetIdle = () => { idleTime.current = 0; };
-    const onUserInteraction = () => {
+    const onUserInteraction = (e: Event) => {
+      // For mousemove, maybe add a threshold?
+      // For now, let's keep it strict but maybe user needs to be completely hands off
       resetIdle();
       soundManager.resume(); // Ensure AudioContext is resumed on user gesture
     };
@@ -368,6 +371,9 @@ export default function Home() {
        }
        // Hide clock during Judgment (Start of Act 4) - Already handled by top check but explicit here for clarity if logic changes
        setShowClock(false);
+       
+       // Play intense sound for Act 4 entry
+       soundManager.playDeepChime();
     }
   }, [gameState.act]);
 
