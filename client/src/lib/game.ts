@@ -55,28 +55,28 @@ export const PUZZLES = {
     act: 1,
     prompt: "When hours and minutes agree.",
     hint: "HH + MM = 42 (e.g., 20:22)",
-    check: (h: number, m: number, s: number) => h + m === 42
+    check: (h: number, m: number, s: number, _meta?: any) => h + m === 42
   },
   reflection: {
     id: 'reflection',
     act: 1,
     prompt: "Time likes symmetry.",
     hint: "Seconds must repeat (00, 11, 22...)",
-    check: (h: number, m: number, s: number) => s % 11 === 0 // 00, 11, 22...
+    check: (h: number, m: number, s: number, _meta?: any) => s % 11 === 0 // 00, 11, 22...
   },
   imbalance: {
     id: 'imbalance',
     act: 1,
     prompt: "Balance is suspicious.",
     hint: "Solve when minutes are ODD",
-    check: (h: number, m: number, s: number) => m % 2 !== 0
+    check: (h: number, m: number, s: number, _meta?: any) => m % 2 !== 0
   },
   echo_of_the_hour: {
     id: 'echo_of_the_hour',
     act: 1,
     prompt: "The pure hour approaches.",
     hint: "Wait for exactly HH:00:00",
-    check: (h: number, m: number, s: number) => m === 0 && s === 0
+    check: (h: number, m: number, s: number, _meta?: any) => m === 0 && s === 0
   },
   stillness: {
     id: 'stillness',
@@ -90,14 +90,14 @@ export const PUZZLES = {
     act: 2,
     prompt: "No room for error.",
     hint: "Solve exactly when seconds are 00",
-    check: (h: number, m: number, s: number) => s === 0
+    check: (h: number, m: number, s: number, _meta?: any) => s === 0
   },
   outside_time: {
     id: 'outside_time',
     act: 2,
     prompt: "This is not the right time.",
     hint: "Set time to Night (23:00-06:00)",
-    check: (h: number, m: number, s: number) => h < 6 || h >= 23
+    check: (h: number, m: number, s: number, _meta?: any) => h < 6 || h >= 23
   },
   mini_paradox: {
     id: 'mini_paradox',
@@ -133,7 +133,7 @@ export const PUZZLES = {
     act: 4,
     prompt: "Face the truth.",
     hint: "Wait for 00 seconds",
-    check: (h: number, m: number, s: number) => s === 0
+    check: (h: number, m: number, s: number, _meta?: any) => s === 0
   },
   // --- ENDINGS ---
   acceptance: {
@@ -141,7 +141,7 @@ export const PUZZLES = {
     act: 4,
     prompt: "Return to the source.",
     hint: "Set the time to exactly 00:00:00",
-    check: (h: number, m: number, s: number) => h === 0 && m === 0 && s === 0
+    check: (h: number, m: number, s: number, _meta?: any) => h === 0 && m === 0 && s === 0
   },
   destruction: {
     id: 'destruction',

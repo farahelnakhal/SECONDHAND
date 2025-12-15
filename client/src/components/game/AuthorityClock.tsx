@@ -56,17 +56,6 @@ export function AuthorityClock({ onAdjust, onReset, isLocked, className }: Autho
             <ControlBtn onClick={() => onAdjust('minute', -1)} icon={<ChevronDown className="w-4 h-4" />} disabled={isLocked} />
           </div>
         </div>
-        
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={onReset}
-          disabled={isLocked}
-          className="mt-2 text-xs text-muted-foreground hover:text-white hover:bg-white/5 disabled:opacity-0"
-        >
-          <RotateCcw className="w-3 h-3 mr-2" />
-          Sync
-        </Button>
       </div>
     </motion.div>
   );

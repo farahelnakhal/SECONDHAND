@@ -64,7 +64,7 @@ export function GlitchOverlay({ intensity }: GlitchOverlayProps) {
             transition={{ 
               repeat: Infinity, 
               duration: 0.1,
-              repeatDelay: 2
+              repeatDelay: 2 / intensity
             }}
           />
            <motion.div 
@@ -76,10 +76,23 @@ export function GlitchOverlay({ intensity }: GlitchOverlayProps) {
             transition={{ 
               duration: 0.2,
               repeat: Infinity,
-              repeatDelay: 5
+              repeatDelay: 5 / intensity
             }}
           />
         </>
+      )}
+
+      {/* Extreme Glitch - "Horrible" Level */}
+      {intensity > 1.5 && (
+        <motion.div 
+          className="absolute inset-0 bg-red-500/10 mix-blend-color-burn"
+          animate={{ opacity: [0, 0.2, 0, 0.4, 0] }}
+          transition={{ duration: 0.1, repeat: Infinity, repeatDelay: 0.5 }}
+        />
+      )}
+      
+      {intensity > 2.0 && (
+         <div className="absolute inset-0 backdrop-invert backdrop-opacity-10 pointer-events-none" />
       )}
     </div>
   );

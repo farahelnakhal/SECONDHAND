@@ -38,6 +38,7 @@ export default function Home() {
 
   const [introComplete, setIntroComplete] = useState(false);
   const [gameReady, setGameReady] = useState(false);
+  const [showClock, setShowClock] = useState(true);
   const [countdown, setCountdown] = useState(10);
   const { toast } = useToast();
   const lastIdleCheck = useRef(Date.now());
@@ -248,7 +249,11 @@ export default function Home() {
     if (id === 'fractured_moments') setNarrative({ text: "REALITY BREAK.", subtext: "You broke the simulator." });
     
     // Endings
-    if (id === 'judgment') setNarrative({ text: "Verdict delivered.", subtext: "Your path is clear." });
+    if (id === 'judgment') {
+       setNarrative({ text: "Verdict delivered.", subtext: "Your path is clear." });
+       // Keep clock hidden for a moment, then show for final challenge
+       setTimeout(() => setShowClock(true), 4000);
+    }
     if (id === 'acceptance') setNarrative({ text: "The Custodian.", subtext: "You kept the time pure. The cycle continues." });
     if (id === 'destruction') setNarrative({ text: "The Breaker.", subtext: "Time is broken. You are free." });
     if (id === 'alignment') setNarrative({ text: "The Architect.", subtext: "You built a new moment." });
@@ -289,20 +294,19 @@ export default function Home() {
     const msAmount = unit === 'hour' ? amount * 3600000 : amount * 60000;
     setOffset(prev => prev + msAmount);
     
-    // Only increase glitch level if NOT in ending phase (unless causing destruction)
-    if (gameState.act !== 4) {
-      setGameState(prev => ({
+    // Increase glitch level aggressively
+    // If in Act 4, it gets "horrible" (> 1.0)
+    setGameState(prev => {
+      const baseGlitch = (prev.cheatCount + 1) * 0.1;
+      const horrorMultiplier = prev.act === 4 ? 2.0 : 1.0;
+      return {
         ...prev,
         cheatCount: prev.cheatCount + 1,
-        // Glitch level accumulates and doesn't easily go down
-        glitchLevel: Math.min((prev.cheatCount + 1) * 0.05, 1),
+        glitchLevel: Math.min(baseGlitch * horrorMultiplier, 5.0), // Cap at 5.0 for extreme horror
         hasCheatedInAct1: prev.act === 1 ? true : prev.hasCheatedInAct1,
         hasCheatedInAct2: prev.act === 2 ? true : prev.hasCheatedInAct2
-      }));
-    } else {
-        // In Act 4, manipulation increases glitch temporarily?
-        // Or we keep glitch high if it was high.
-    }
+      };
+    });
 
     // Reset idle
     idleTime.current = 0;
@@ -346,6 +350,8 @@ export default function Home() {
        } else {
           setNarrative({ text: "The Balance.", subtext: "You took control, but respected the order." });
        }
+       // Hide clock during Judgment (Start of Act 4)
+       setShowClock(false);
     }
   }, [gameState.act]);
 
@@ -490,8 +496,12 @@ export default function Home() {
 
       <div className="z-10 relative">
         <motion.div
-          animate={{ opacity: gameReady ? 1 : 0, filter: gameReady ? 'blur(0px)' : 'blur(20px)' }}
-          transition={{ duration: 1 }}
+          animate={{ 
+            opacity: gameReady && showClock ? 1 : 0, 
+            filter: gameReady && showClock ? 'blur(0px)' : 'blur(20px)',
+            scale: showClock ? 1 : 0.9
+          }}
+          transition={{ duration: 2 }}
         >
           <Clock 
             time={authorityTime} 
@@ -500,7 +510,7 @@ export default function Home() {
         </motion.div>
         
         {/* Real Time Ghost (visible only in Act 3 or high glitch) */}
-        {(gameState.act === 3 || gameState.glitchLevel > 0.5) && offset !== 0 && gameReady && (
+        {(gameState.act === 3 || gameState.glitchLevel > 0.5) && offset !== 0 && gameReady && showClock && (
           <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none blur-sm mix-blend-difference scale-110">
              <Clock time={realTime} showSeconds={true} />
           </div>
@@ -513,7 +523,7 @@ export default function Home() {
           <AuthorityClock 
             isLocked={false} 
             onAdjust={handleAdjust}
-            onReset={handleReset}
+            onReset={() => {}} // No-op since button is removed visually
           />
         )}
       </AnimatePresence>
