@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Watch, Volume2, VolumeX, Bug } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { IntroSequence } from '@/components/game/IntroSequence';
 
 export default function Home() {
   // --- State ---
@@ -34,6 +35,7 @@ export default function Home() {
   const [isMuted, setIsMuted] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
 
+  const [introComplete, setIntroComplete] = useState(false);
   const { toast } = useToast();
   const lastIdleCheck = useRef(Date.now());
   const idleTime = useRef(0);
@@ -51,17 +53,19 @@ export default function Home() {
       setRealTime(now);
       
       // Play tick sound if seconds changed
-      if (now.second() !== lastTick.current) {
+      if (now.second() !== lastTick.current && introComplete) {
         lastTick.current = now.second();
         soundManager.playTick();
       }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [introComplete]);
 
   // --- High Frequency Loop (Game Logic) ---
   useEffect(() => {
+    if (!introComplete) return;
+
     let animationFrameId: number;
     
     const loop = () => {
@@ -260,6 +264,19 @@ export default function Home() {
 
   return (
     <div className="relative w-screen h-screen bg-black text-white overflow-hidden flex flex-col items-center justify-center">
+      <AnimatePresence>
+        {!introComplete && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1 }}
+            className="absolute inset-0 z-[100]"
+          >
+            <IntroSequence onComplete={() => setIntroComplete(true)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <GlitchOverlay intensity={gameState.glitchLevel} />
       
       {/* UI Controls */}
