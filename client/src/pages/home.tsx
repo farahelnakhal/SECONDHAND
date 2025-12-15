@@ -43,7 +43,7 @@ export default function Home() {
 
   // --- Derived State ---
   const authorityTime = realTime.add(offset, 'ms');
-  const isAuthorityUnlocked = gameState.act >= 2;
+  const isAuthorityUnlocked = true; // Always unlocked now
   const isCheating = Math.abs(offset) > 1000;
 
   // --- Game Loop (1s tick) ---
@@ -244,8 +244,10 @@ export default function Home() {
   useEffect(() => {
     // Only update narrative if we just entered the act (simple check via puzzle count, or we could track prev act)
     // For now, rely on render checks
-    if (gameState.act === 2 && !gameState.puzzlesSolved.some(id => PUZZLES[id as keyof typeof PUZZLES].act === 2)) {
-      setNarrative({ text: "Act II: Control", subtext: "The Authority Clock is now active." });
+    if (gameState.act === 1 && gameState.puzzlesSolved.length === 0) {
+       // Keep Observe
+    } else if (gameState.act === 2 && !gameState.puzzlesSolved.some(id => PUZZLES[id as keyof typeof PUZZLES].act === 2)) {
+      setNarrative({ text: "Act II: Control", subtext: "You have already seized the power." });
     } else if (gameState.act === 3 && !gameState.puzzlesSolved.some(id => PUZZLES[id as keyof typeof PUZZLES].act === 3)) {
       setNarrative({ text: "Act III: Resistance", subtext: "The timelines are fracturing." });
     }
