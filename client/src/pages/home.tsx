@@ -4,7 +4,7 @@ import { Clock } from '@/components/game/Clock';
 import { AuthorityClock } from '@/components/game/AuthorityClock';
 import { Narrative } from '@/components/game/Narrative';
 import { GlitchOverlay } from '@/components/game/GlitchOverlay';
-import { PUZZLES, GameState, Act, PuzzleId } from '@/lib/game';
+import { PUZZLES, GameState, Act, PuzzleId, PUZZLE_SEQUENCE } from '@/lib/game';
 import { soundManager } from '@/lib/sound';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
@@ -137,10 +137,8 @@ export default function Home() {
       } else if (puzzle.id === 'let_go') {
         isSolved = puzzle.check(h, m, s, { idleTime: idleTime.current });
       } else if (puzzle.id === 'echo_of_the_hour') {
-        const act1SolvedCount = gameState.puzzlesSolved.filter(id => PUZZLES[id as keyof typeof PUZZLES].act === 1).length;
-        if (!gameState.hasCheatedInAct1 && act1SolvedCount >= 3) {
-          isSolved = puzzle.check(h, m, s);
-        }
+        // Just check condition, no cheat restriction
+        isSolved = puzzle.check(h, m, s);
       } else if (puzzle.id === 'mini_paradox') {
          if (gameState.hasCheatedInAct2) {
             isSolved = puzzle.check(h, m, s, { offset });
@@ -350,10 +348,15 @@ export default function Home() {
 
       <Objectives 
         isVisible={gameReady}
-        availablePuzzles={Object.values(PUZZLES)
-          .filter(p => p.act === gameState.act && !gameState.puzzlesSolved.includes(p.id as PuzzleId))
-          .map(p => p.id as PuzzleId)
-        }
+        availablePuzzles={(() => {
+          // Filter for current Act and not solved
+          const actPuzzles = PUZZLE_SEQUENCE.filter(pid => {
+            const p = PUZZLES[pid as keyof typeof PUZZLES];
+            return p.act === gameState.act && !gameState.puzzlesSolved.includes(pid);
+          });
+          // Return only the first one (Sequential)
+          return actPuzzles.slice(0, 1);
+        })()}
       />
 
       {introComplete && !gameReady && (
@@ -404,9 +407,10 @@ export default function Home() {
       </div>
 
       <AnimatePresence>
+        {/* Always visible Authority Clock once game is ready */}
         {gameReady && (
           <AuthorityClock 
-            isLocked={!isAuthorityUnlocked}
+            isLocked={false} 
             onAdjust={handleAdjust}
             onReset={handleReset}
           />

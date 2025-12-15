@@ -23,6 +23,25 @@ export interface GameState {
   hasCheatedInAct2: boolean;
 }
 
+export const PUZZLE_SEQUENCE: PuzzleId[] = [
+  // ACT 1
+  'agreement',
+  'reflection',
+  'imbalance',
+  'echo_of_the_hour',
+  
+  // ACT 2
+  'stillness',
+  'precision',
+  'outside_time',
+  'mini_paradox',
+
+  // ACT 3
+  'split',
+  'let_go',
+  'fractured_moments'
+];
+
 export const PUZZLES = {
   agreement: {
     id: 'agreement',
@@ -49,7 +68,7 @@ export const PUZZLES = {
     id: 'echo_of_the_hour',
     act: 1,
     prompt: "The pure hour approaches.",
-    hint: "Wait for exactly HH:00:00 (No cheats)",
+    hint: "Wait for exactly HH:00:00",
     check: (h: number, m: number, s: number) => m === 0 && s === 0
   },
   stillness: {
