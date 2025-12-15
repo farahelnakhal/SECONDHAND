@@ -145,31 +145,17 @@ export default function Home() {
     
     // Also handle already unlocked Act 4 (Ending)
     if (gameState.act === 4) {
-       // Find which ending puzzle is active but not solved
-       // Actually, we just need to re-derive it or store it. 
-       // Simpler: Just check all Act 4 puzzles. Only one fits the criteria logic, but let's just iterate all Act 4.
-       const endingPuzzles = ['acceptance', 'destruction', 'alignment', 'departure'] as PuzzleId[];
-       // We only want to check the one that matches our state, OR we can just check all and rely on the player to find it.
-       // Better: The Objective component needs to know WHICH one to show.
-       // So we should probably transition to Act 4 explicitly when Act 3 is done.
-    }
-
-    // New Flow:
-    // If Act 3 is done -> Transition to Act 4 -> Set specific active ending puzzle in state?
-    // OR: Just dynamically pick it here.
-    
-    if (gameState.act === 4) {
-       // In Act 4, we only check the specific ending puzzle assigned or all of them?
-       // Let's check ALL ending puzzles. The player might qualify for multiple but usually narrative locks one.
-       // Let's stick to the one implied by stats.
-       if (gameState.cheatCount > 15) nextPuzzleId = 'destruction';
-       else if (gameState.cheatCount < 2) nextPuzzleId = 'acceptance';
-       // Note: idleTime is transient, so 'departure' is hard to lock in. 
-       // Let's make Departure based on low interaction count overall? Or just if they trigger it now.
-       else nextPuzzleId = 'alignment'; 
-       
-       // Override for Departure if current idle is high
-       if (idleTime.current > 20000) nextPuzzleId = 'departure';
+       // First check Judgment
+       if (!gameState.puzzlesSolved.includes('judgment')) {
+         nextPuzzleId = 'judgment';
+       } else {
+         // Then check Ending
+         if (gameState.cheatCount > 15) nextPuzzleId = 'destruction';
+         else if (gameState.cheatCount < 2) nextPuzzleId = 'acceptance';
+         else nextPuzzleId = 'alignment'; 
+         
+         if (idleTime.current > 20000) nextPuzzleId = 'departure';
+       }
     }
 
 
@@ -207,6 +193,7 @@ export default function Home() {
         }
     } else if (puzzle.act === 4) {
         // ENDING PUZZLES
+        if (puzzle.id === 'judgment') isSolved = puzzle.check(h, m, s);
         if (puzzle.id === 'acceptance') isSolved = puzzle.check(h, m, s, { offset });
         if (puzzle.id === 'destruction') isSolved = puzzle.check(h, m, s, { offset });
         if (puzzle.id === 'alignment') isSolved = puzzle.check(h, m, s, { offset });
@@ -261,6 +248,7 @@ export default function Home() {
     if (id === 'fractured_moments') setNarrative({ text: "REALITY BREAK.", subtext: "You broke the simulator." });
     
     // Endings
+    if (id === 'judgment') setNarrative({ text: "Verdict delivered.", subtext: "Your path is clear." });
     if (id === 'acceptance') setNarrative({ text: "The Custodian.", subtext: "You kept the time pure. The cycle continues." });
     if (id === 'destruction') setNarrative({ text: "The Breaker.", subtext: "Time is broken. You are free." });
     if (id === 'alignment') setNarrative({ text: "The Architect.", subtext: "You built a new moment." });
@@ -330,7 +318,16 @@ export default function Home() {
     } else if (gameState.act === 3 && !gameState.puzzlesSolved.some(id => PUZZLES[id as keyof typeof PUZZLES].act === 3)) {
       setNarrative({ text: "Act III: Resistance", subtext: "The timelines are fracturing." });
     } else if (gameState.act === 4 && !gameState.puzzlesSolved.some(id => PUZZLES[id as keyof typeof PUZZLES].act === 4)) {
-       setNarrative({ text: "Finale.", subtext: "Determine your fate." });
+       // Narrative for Judgment Phase
+       if (gameState.cheatCount > 15) {
+          setNarrative({ text: "The Fracture.", subtext: "You forced your will upon the flow. A violent path." });
+       } else if (gameState.cheatCount < 2) {
+          setNarrative({ text: "The Pattern.", subtext: "You obeyed every command. A perfect sequence." });
+       } else if (idleTime.current > 30000) {
+          setNarrative({ text: "The Void.", subtext: "You observed from a distance. The timeline barely felt your touch." });
+       } else {
+          setNarrative({ text: "The Balance.", subtext: "You took control, but respected the order." });
+       }
     }
   }, [gameState.act]);
 
@@ -418,13 +415,19 @@ export default function Home() {
         availablePuzzles={(() => {
           // If Act 4, determine the dynamic ending puzzle
           if (gameState.act === 4) {
+             // 1. Check Judgment first
+             if (!gameState.puzzlesSolved.includes('judgment')) {
+                return ['judgment'];
+             }
+
+             // 2. If Judgment solved, show specific ending
              let endingId: PuzzleId = 'alignment';
              if (idleTime.current > 20000) endingId = 'departure';
              else if (gameState.cheatCount > 15) endingId = 'destruction';
              else if (gameState.cheatCount < 2) endingId = 'acceptance';
              
-             // If already solved an ending, show nothing (or show completion message)
-             if (gameState.puzzlesSolved.some(id => PUZZLES[id as keyof typeof PUZZLES].act === 4)) return [];
+             // If already solved an ending, show nothing
+             if (gameState.puzzlesSolved.some(id => id !== 'judgment' && PUZZLES[id as keyof typeof PUZZLES].act === 4)) return [];
              
              return [endingId];
           }

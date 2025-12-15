@@ -10,6 +10,8 @@ export type PuzzleId =
   | 'echo_of_the_hour' // Secret Act 1
   | 'mini_paradox'     // Secret Act 2
   | 'fractured_moments' // Secret Act 3
+  // Act 4: Judgment
+  | 'judgment'
   // Endings
   | 'acceptance'
   | 'destruction'
@@ -124,6 +126,14 @@ export const PUZZLES = {
     prompt: "Break it all.",
     hint: "Heavy manipulation",
     check: (h: number, m: number, s: number, meta?: { cheatCount: number }) => (meta?.cheatCount || 0) > 20
+  },
+  // --- ACT 4: JUDGMENT ---
+  judgment: {
+    id: 'judgment',
+    act: 4,
+    prompt: "Face the truth.",
+    hint: "Wait for 00 seconds",
+    check: (h: number, m: number, s: number) => s === 0
   },
   // --- ENDINGS ---
   acceptance: {
