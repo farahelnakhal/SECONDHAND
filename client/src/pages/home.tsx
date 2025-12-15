@@ -117,43 +117,48 @@ export default function Home() {
 
   // --- Logic ---
   const checkPuzzles = () => {
-    // Only check if we haven't solved it yet
-    const currentPuzzles = Object.values(PUZZLES).filter(p => p.act === gameState.act && !gameState.puzzlesSolved.includes(p.id as PuzzleId));
-    const activePuzzleIds = currentPuzzles.map(p => p.id as PuzzleId);
+    // Only check the NEXT available puzzle in sequence
+    const nextPuzzleId = PUZZLE_SEQUENCE.find(pid => {
+       const p = PUZZLES[pid as keyof typeof PUZZLES];
+       return p.act === gameState.act && !gameState.puzzlesSolved.includes(pid);
+    });
+
+    if (!nextPuzzleId) return; // No more puzzles in this act or all solved
+
+    const puzzle = PUZZLES[nextPuzzleId as keyof typeof PUZZLES];
+    if (!puzzle) return;
 
     const h = authorityTime.hour();
     const m = authorityTime.minute();
     const s = authorityTime.second();
 
-    for (const puzzle of currentPuzzles) {
-      let isSolved = false;
+    let isSolved = false;
 
-      // Special metadata checks
-      if (puzzle.id === 'stillness') {
-        // Handled in handleAdjust
-        continue; 
-      } else if (puzzle.id === 'split') {
-        isSolved = puzzle.check(h, m, s, { offset });
-      } else if (puzzle.id === 'let_go') {
-        isSolved = puzzle.check(h, m, s, { idleTime: idleTime.current });
-      } else if (puzzle.id === 'echo_of_the_hour') {
-        // Just check condition, no cheat restriction
-        isSolved = puzzle.check(h, m, s);
-      } else if (puzzle.id === 'mini_paradox') {
-         if (gameState.hasCheatedInAct2) {
-            isSolved = puzzle.check(h, m, s, { offset });
-         }
-      } else if (puzzle.id === 'fractured_moments') {
-         if (gameState.cheatCount > 10) { 
-            isSolved = puzzle.check(h, m, s, { cheatCount: gameState.cheatCount });
-         }
-      } else {
-        isSolved = puzzle.check(h, m, s);
-      }
+    // Special metadata checks
+    if (puzzle.id === 'stillness') {
+      // Handled in handleAdjust
+      return; 
+    } else if (puzzle.id === 'split') {
+      isSolved = puzzle.check(h, m, s, { offset });
+    } else if (puzzle.id === 'let_go') {
+      isSolved = puzzle.check(h, m, s, { idleTime: idleTime.current });
+    } else if (puzzle.id === 'echo_of_the_hour') {
+      // Just check condition, no cheat restriction
+      isSolved = puzzle.check(h, m, s);
+    } else if (puzzle.id === 'mini_paradox') {
+        if (gameState.hasCheatedInAct2) {
+          isSolved = puzzle.check(h, m, s, { offset });
+        }
+    } else if (puzzle.id === 'fractured_moments') {
+        if (gameState.cheatCount > 10) { 
+          isSolved = puzzle.check(h, m, s, { cheatCount: gameState.cheatCount });
+        }
+    } else {
+      isSolved = puzzle.check(h, m, s);
+    }
 
-      if (isSolved) {
-        solvePuzzle(puzzle.id as PuzzleId);
-      }
+    if (isSolved) {
+      solvePuzzle(puzzle.id as PuzzleId);
     }
   };
 
