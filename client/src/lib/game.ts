@@ -7,6 +7,12 @@ export type PuzzleId =
   | 'outside_time' 
   | 'split' 
   | 'let_go'
+  | 'sequence'      // New Act 1
+  | 'stagnation'    // New Act 1
+  | 'shadow_hour'   // New Act 2
+  | 'discord'       // New Act 2
+  | 'inversion'     // New Act 3
+  | 'fading'        // New Act 3
   | 'echo_of_the_hour' // Secret Act 1
   | 'mini_paradox'     // Secret Act 2
   | 'fractured_moments' // Secret Act 3
@@ -28,6 +34,7 @@ export interface GameState {
   lastSolvedAt: number;
   hasCheatedInAct1: boolean;
   hasCheatedInAct2: boolean;
+  signalStrength: number; // New feature: 0-100
 }
 
 export const PUZZLE_SEQUENCE: PuzzleId[] = [
@@ -35,17 +42,23 @@ export const PUZZLE_SEQUENCE: PuzzleId[] = [
   'agreement',
   'reflection',
   'imbalance',
+  'sequence',
+  'stagnation',
   'echo_of_the_hour',
   
   // ACT 2
   'stillness',
   'precision',
   'outside_time',
+  'shadow_hour',
+  'discord',
   'mini_paradox',
 
   // ACT 3
   'split',
+  'inversion',
   'let_go',
+  'fading',
   'fractured_moments'
 ];
 
@@ -70,6 +83,24 @@ export const PUZZLES = {
     prompt: "Balance is suspicious.",
     hint: "Solve when minutes are ODD",
     check: (h: number, m: number, s: number, _meta?: any) => m % 2 !== 0
+  },
+  sequence: {
+    id: 'sequence',
+    act: 1,
+    prompt: "The order must rise.",
+    hint: "HH < MM < SS",
+    check: (h: number, m: number, s: number, _meta?: any) => h < m && m < s
+  },
+  stagnation: {
+    id: 'stagnation',
+    act: 1,
+    prompt: "Uniformity is safety.",
+    hint: "HH, MM, and SS must share a digit (e.g., 12:12:12 not possible, but maybe 11:11:11)",
+    check: (h: number, m: number, s: number, _meta?: any) => {
+       // Simple check: H == M == S is simplest interpretation but hard to hit exactly
+       // Let's go with: H, M, S all even
+       return h % 2 === 0 && m % 2 === 0 && s % 2 === 0;
+    }
   },
   echo_of_the_hour: {
     id: 'echo_of_the_hour',
@@ -99,6 +130,20 @@ export const PUZZLES = {
     hint: "Set time to Night (23:00-06:00)",
     check: (h: number, m: number, s: number, _meta?: any) => h < 6 || h >= 23
   },
+  shadow_hour: {
+    id: 'shadow_hour',
+    act: 2,
+    prompt: "The hour that doesn't exist.",
+    hint: "Set time to 00:00:XX",
+    check: (h: number, m: number, s: number, _meta?: any) => h === 0 && m === 0
+  },
+  discord: {
+    id: 'discord',
+    act: 2,
+    prompt: "Chaos is a ladder.",
+    hint: "No two numbers should match (H!=M, M!=S, H!=S)",
+    check: (h: number, m: number, s: number, _meta?: any) => h !== m && m !== s && h !== s
+  },
   mini_paradox: {
     id: 'mini_paradox',
     act: 2,
@@ -113,12 +158,26 @@ export const PUZZLES = {
     hint: "Align Authority Clock and Real Clock",
     check: (h: number, m: number, s: number, meta?: { offset: number }) => Math.abs(meta?.offset || 0) < 1000 // < 1s diff
   },
+  inversion: {
+    id: 'inversion',
+    act: 3,
+    prompt: "The mirror world.",
+    hint: "Set minutes to 30",
+    check: (h: number, m: number, s: number, _meta?: any) => m === 30
+  },
   let_go: {
     id: 'let_go',
     act: 3,
     prompt: "Stop fixing it.",
     hint: "Do nothing for 10s",
     check: (h: number, m: number, s: number, meta?: { idleTime: number }) => (meta?.idleTime || 0) > 10000
+  },
+  fading: {
+    id: 'fading',
+    act: 3,
+    prompt: "It's slipping away.",
+    hint: "Tune the SIGNAL to > 80%",
+    check: (h: number, m: number, s: number, meta?: { signal: number }) => (meta?.signal || 0) > 80
   },
   fractured_moments: {
     id: 'fractured_moments',

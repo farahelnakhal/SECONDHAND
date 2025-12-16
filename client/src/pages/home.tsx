@@ -8,9 +8,10 @@ import { PUZZLES, GameState, Act, PuzzleId, PUZZLE_SEQUENCE } from '@/lib/game';
 import { soundManager } from '@/lib/sound';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
-import { Watch, Volume2, VolumeX, Bug } from 'lucide-react';
+import { Watch, Volume2, VolumeX, Bug, Radio } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider'; // Need to import or create this if not exists
 import { IntroSequence } from '@/components/game/IntroSequence';
 import { Objectives } from '@/components/game/Objectives';
 
@@ -25,7 +26,8 @@ export default function Home() {
     cheatCount: 0,
     lastSolvedAt: 0,
     hasCheatedInAct1: false,
-    hasCheatedInAct2: false
+    hasCheatedInAct2: false,
+    signalStrength: 0 // Initialize new state
   });
   
   const [narrative, setNarrative] = useState({
@@ -192,6 +194,8 @@ export default function Home() {
         if (gameState.hasCheatedInAct2) {
           isSolved = puzzle.check(h, m, s, { offset });
         }
+    } else if (puzzle.id === 'fading') {
+        isSolved = puzzle.check(h, m, s, { signal: gameState.signalStrength });
     } else if (puzzle.id === 'fractured_moments') {
         if (gameState.cheatCount > 10) { 
           isSolved = puzzle.check(h, m, s, { cheatCount: gameState.cheatCount });
@@ -242,10 +246,16 @@ export default function Home() {
     if (id === 'agreement') setNarrative({ text: "Harmony found.", subtext: "The numbers align." });
     if (id === 'reflection') setNarrative({ text: "Symmetry observed.", subtext: "Time reflects itself." });
     if (id === 'imbalance') setNarrative({ text: "Imbalance corrected.", subtext: "Oddity accepted." });
+    if (id === 'sequence') setNarrative({ text: "The path ascends.", subtext: "Order is restored." });
+    if (id === 'stagnation') setNarrative({ text: "Uniformity.", subtext: "Everything is the same." });
     if (id === 'precision') setNarrative({ text: "Perfect precision.", subtext: "The moment is exact." });
     if (id === 'outside_time') setNarrative({ text: "Beyond the boundary.", subtext: "You stepped outside." });
+    if (id === 'shadow_hour') setNarrative({ text: "The void hour.", subtext: "It does not exist." });
+    if (id === 'discord') setNarrative({ text: "Chaos reigns.", subtext: "Nothing matches." });
     if (id === 'split') setNarrative({ text: "Convergence.", subtext: "Two timelines become one." });
+    if (id === 'inversion') setNarrative({ text: "Reflected world.", subtext: "The other side." });
     if (id === 'let_go') setNarrative({ text: "Released.", subtext: "You stopped fighting the flow." });
+    if (id === 'fading') setNarrative({ text: "Signal found.", subtext: "You tuned into the void." });
     
     // Secret texts
     if (id === 'echo_of_the_hour') setNarrative({ text: "Pure Time.", subtext: "You respected the flow. The Timekeeper nods." });
@@ -489,6 +499,42 @@ export default function Home() {
           return actPuzzles.slice(0, 1);
         })()}
       />
+
+      {/* Signal Tuner (New Feature - Act 2+) */}
+      <AnimatePresence>
+        {gameState.act >= 2 && gameReady && !gameEnded && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 w-64 bg-zinc-900/80 border border-zinc-800 p-4 rounded-lg backdrop-blur-md z-40 flex flex-col gap-2"
+          >
+             <div className="flex items-center justify-between text-xs font-mono text-zinc-500">
+                <span className="flex items-center gap-2"><Radio className="w-3 h-3" /> SIGNAL FREQUENCY</span>
+                <span>{gameState.signalStrength}%</span>
+             </div>
+             <Slider 
+               value={[gameState.signalStrength]} 
+               min={0} 
+               max={100} 
+               step={1} 
+               onValueChange={(vals) => {
+                 setGameState(prev => ({ ...prev, signalStrength: vals[0] }));
+                 // Add static noise sound when changing
+                 if (Math.random() > 0.7) soundManager.playGlitch(0.05);
+               }}
+               className="cursor-pointer"
+             />
+             {/* Visual Noise Overlay controlled by Signal */}
+             <div 
+               className="absolute inset-0 pointer-events-none mix-blend-overlay opacity-20"
+               style={{ 
+                 backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='${0.5 + (gameState.signalStrength / 200)}' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+               }}
+             />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {introComplete && !gameReady && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center z-50">
